@@ -14,10 +14,11 @@ export class GameView extends Component {
     @property({type: Label}) 
     private resourceLabel: Label = null;
 
-    private gameController: GameController = new GameController();
+    @property({type: GameController})
+    private gameController: GameController;
 
     protected onLoad() {
-        this.updateUI();
+        // this.updateUI();
     }
     
     public updateUI() {
