@@ -8,7 +8,7 @@ export class GameModel extends Component {
 
     public static Instance: GameModel;
 
-    private gold: number = InitialState.gold;
+    private gold: number = 0;
 
     public get Gold() : number {
         return this.gold;
@@ -29,7 +29,7 @@ export class GameModel extends Component {
     public cows: number = 0;
     public plots: GameState['plots'] = [];
 
-    protected start(): void {
+    protected onLoad(): void {
         GameModel.Instance = this;
     }
 
@@ -54,6 +54,7 @@ export class GameModel extends Component {
     
     public loadFromSave(saved: GameState): void {
         this.gold = saved.gold;
+        console.log('gold load from save',this.gold)
         this.workers = saved.workers;
         this.idleWorkers = saved.idleWorkers;
         this.seeds = {...saved.seeds};

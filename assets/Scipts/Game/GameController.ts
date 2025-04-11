@@ -8,14 +8,13 @@ const { ccclass, property } = _decorator;
 @ccclass('GameController')
 export class GameController extends Component {
 
-    @property({type: GameView})
-    private gameView: GameView;
-
-    protected onLoad(): void {
+    protected start(): void {
         const savedData = SaveLoadManager.loadGame();
+        console.log(savedData);
         if (savedData) {
             GameModel.Instance.loadFromSave(savedData);
         } else {
+            console.log('log ra nếu chưa có local', InitialState)
             GameModel.Instance.loadFromInitial(InitialState);
         }
     }

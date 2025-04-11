@@ -5,6 +5,7 @@ import { GameModel } from '../GameModel';
 import { InitialState, ShopConfig } from '../Data/GameConfig';
 import { GameController } from '../GameController';
 import { GameView } from '../GameView';
+import { SaveLoadManager } from '../SaveData/SaveLoadManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('PlotMapManager')
@@ -25,28 +26,29 @@ export class PlotMapManager extends Component {
     }
 
     private initPlots() {
+        console.log('init plots', GameModel.Instance.plots)
         const plotDataList = GameModel.Instance.plots;
         for (const data of plotDataList) {
             const plotNode = instantiate(this.landPlotPrefab);
             this.landPlotPool.push(plotNode);
             this.node.addChild(plotNode);
             plotNode.getComponent(LandPlot).init(data);
-          }
-          this.createBuyPlotButton();
         }
+        this.createBuyPlotButton();
+    }
       
-        private createBuyPlotButton(): void {
-          this.buyPlotNode = instantiate(this.buyPlotPrefab);
-          this.node.addChild(this.buyPlotNode);
-      
-          this.buyPlotNode.on(Node.EventType.TOUCH_END, () => {
-            this.onBuyPlot();
-          });
-        }
+    private createBuyPlotButton(): void {
+        this.buyPlotNode = instantiate(this.buyPlotPrefab);
+        this.node.addChild(this.buyPlotNode);
+    
+        this.buyPlotNode.on(Node.EventType.TOUCH_END, () => {
+        this.onBuyPlot();
+        });
+    }
       
     private onBuyPlot(): void {
-        if (GameModel.Instance.Gold >= ShopConfig.plot) {
-            GameModel.Instance.spendGold(ShopConfig.plot);
+        const spendGold = GameModel.Instance.spendGold(ShopConfig.plot);
+        if(spendGold){
             GameView.Instance.updateUI();
 
             const id = GameModel.Instance.plots.length;
@@ -66,6 +68,7 @@ export class PlotMapManager extends Component {
         
             this.node.removeChild(this.buyPlotNode);
             this.createBuyPlotButton();
+            SaveLoadManager.saveGame(GameModel.Instance.getState());
         } 
         else {
             console.log("Không đủ vàng để mua đất");

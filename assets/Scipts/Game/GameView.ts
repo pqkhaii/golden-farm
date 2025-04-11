@@ -17,15 +17,19 @@ export class GameView extends Component {
     @property({type: Label}) 
     private resourceLabel: Label = null;
 
-    protected start(): void {
+    protected onLoad(): void {
         GameView.Instance = this;
+    }
+
+    protected start(): void {
+        this.updateUI();
     }
     
     public updateUI() {
         const model = GameModel.Instance;
         this.goldLabel.string = `Gold: ${model.Gold}`;
-        this.seedLabel.string = `Seeds: T${model.seeds.tomato}, B${model.seeds.blueberry}, S${model.seeds.strawberry}`;
-        this.resourceLabel.string = `Tomato: ${model.seeds.tomato}, Blueberry: ${model.seeds.blueberry}, Milk: ${model.seeds.milk}`;
+        // this.seedLabel.string = `Seeds: T${model.seeds.tomato}, B${model.seeds.blueberry}, S${model.seeds.strawberry}`;
+        // this.resourceLabel.string = `Tomato: ${model.seeds.tomato}, Blueberry: ${model.seeds.blueberry}, Milk: ${model.seeds.milk}`;
     }
     
     private onPlantTomato() {
