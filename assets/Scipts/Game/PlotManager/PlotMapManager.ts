@@ -1,6 +1,10 @@
-import { _decorator, Component, instantiate, Node, Prefab, UITransform, Vec3 } from 'cc';
+import { _decorator, Component, instantiate, Node, Prefab, Settings, UITransform, Vec3 } from 'cc';
 import { PlotData, PlotStatus } from './PlotData';
 import { LandPlot } from './LandPlot';
+import { GameModel } from '../GameModel';
+import { InitialState, ShopConfig } from '../Data/GameConfig';
+import { GameController } from '../GameController';
+import { GameView } from '../GameView';
 const { ccclass, property } = _decorator;
 
 @ccclass('PlotMapManager')
@@ -9,53 +13,62 @@ export class PlotMapManager extends Component {
     @property({type: Prefab})
     private landPlotPrefab: Prefab;
 
-    @property({type: UITransform})
-    private uiTransform: UITransform;
-  
-    private plotWidth = 240;
-    private plotHeight = 240;
-    private spacing = 10;
-  
+    @property({type: Prefab})
+    private buyPlotPrefab: Prefab;
+
+    private landPlotPool: Node[] = [];
+
+    private buyPlotNode: Node = null;
+
     protected start() {
-      this.initPlots();
+        this.initPlots();
     }
-  
+
     private initPlots() {
-        const mapWidth = this.uiTransform.contentSize.x;
-        const mapHeight = this.uiTransform.contentSize.y;
+        const plotDataList = GameModel.Instance.plots;
+        for (const data of plotDataList) {
+            const plotNode = instantiate(this.landPlotPrefab);
+            this.landPlotPool.push(plotNode);
+            this.node.addChild(plotNode);
+            plotNode.getComponent(LandPlot).init(data);
+          }
+          this.createBuyPlotButton();
+        }
       
-        const cols = Math.floor((mapWidth + this.spacing) / (this.plotWidth + this.spacing));
-        const rows = Math.floor((mapHeight + this.spacing) / (this.plotHeight + this.spacing));
-        const totalPlots = cols * rows;
+        private createBuyPlotButton(): void {
+          this.buyPlotNode = instantiate(this.buyPlotPrefab);
+          this.node.addChild(this.buyPlotNode);
       
-        // 👇 Set lại contentSize cho scrollview
-        const contentWidth = cols * (this.plotWidth + this.spacing) - this.spacing;
-        const contentHeight = rows * (this.plotHeight + this.spacing) - this.spacing;
-        this.uiTransform.setContentSize(contentWidth, contentHeight);
+          this.buyPlotNode.on(Node.EventType.TOUCH_END, () => {
+            this.onBuyPlot();
+          });
+        }
       
-        for (let i = 0; i < totalPlots; i++) {
-          const plotNode = instantiate(this.landPlotPrefab);
-      
-          const row = Math.floor(i / cols);
-          const col = i % cols;
-      
-          const x = col * (this.plotWidth + this.spacing);
-          const y = -row * (this.plotHeight + this.spacing);
-      
-          plotNode.setPosition(new Vec3(x, y, 0));
-          this.node.addChild(plotNode);
-      
-          const data: PlotData = {
-            id: i,
-            isBought: i < 3,
-            status: i < 3 ? PlotStatus.Empty : PlotStatus.Locked,
-            name: "",
-            timeLeft: 0
-          };
-      
-          plotNode.getComponent(LandPlot).init(data);
+    private onBuyPlot(): void {
+        if (GameModel.Instance.Gold >= ShopConfig.plot) {
+            GameModel.Instance.spendGold(ShopConfig.plot);
+            GameView.Instance.updateUI();
+
+            const id = GameModel.Instance.plots.length;
+            const newPlotData = {
+                id,
+                isBought: true,
+                status: PlotStatus.Empty,
+                name: "",
+                timeLeft: 0
+            };
+            GameModel.Instance.plots.push(newPlotData);
+        
+            const newPlotNode = instantiate(this.landPlotPrefab);
+            this.node.insertChild(newPlotNode, this.node.children.length - 1); // Insert trước buyPlotNode
+            newPlotNode.getComponent(LandPlot).init(newPlotData);
+            this.landPlotPool.push(newPlotNode);
+        
+            this.node.removeChild(this.buyPlotNode);
+            this.createBuyPlotButton();
+        } 
+        else {
+            console.log("Không đủ vàng để mua đất");
         }
     }
 }
-
-

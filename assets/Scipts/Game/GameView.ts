@@ -1,9 +1,12 @@
 import { _decorator, Component, Label, Node } from 'cc';
 import { GameController } from './GameController';
+import { GameModel } from './GameModel';
 const { ccclass, property } = _decorator;
 
 @ccclass('GameView')
 export class GameView extends Component {
+
+    public static Instance: GameView;
 
     @property({type: Label}) 
     private goldLabel: Label = null;
@@ -14,17 +17,15 @@ export class GameView extends Component {
     @property({type: Label}) 
     private resourceLabel: Label = null;
 
-    @property({type: GameController})
-    private gameController: GameController;
-
-    protected onLoad() {
-        // this.updateUI();
+    protected start(): void {
+        GameView.Instance = this;
     }
     
     public updateUI() {
-        this.goldLabel.string = `Gold: ${this.gameController.gold}`;
-        this.seedLabel.string = `Seeds: T${this.gameController.seeds.tomato}, B${this.gameController.seeds.blueberry}`;
-        this.resourceLabel.string = `Tomato: ${this.gameController.resources.tomato}, Blueberry: ${this.gameController.resources.blueberry}, Milk: ${this.gameController.resources.milk}`;
+        const model = GameModel.Instance;
+        this.goldLabel.string = `Gold: ${model.Gold}`;
+        this.seedLabel.string = `Seeds: T${model.seeds.tomato}, B${model.seeds.blueberry}, S${model.seeds.strawberry}`;
+        this.resourceLabel.string = `Tomato: ${model.seeds.tomato}, Blueberry: ${model.seeds.blueberry}, Milk: ${model.seeds.milk}`;
     }
     
     private onPlantTomato() {

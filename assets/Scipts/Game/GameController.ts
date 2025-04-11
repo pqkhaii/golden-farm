@@ -1,38 +1,22 @@
 import { _decorator, Component, Node } from 'cc';
-import { ResourceState } from './Models/Resource';
-import { SETTINGS } from './Data/Settings';
+import { SaveLoadManager } from './SaveData/SaveLoadManager';
+import { GameModel } from './GameModel';
+import { InitialState, ShopConfig } from './Data/GameConfig';
+import { GameView } from './GameView';
 const { ccclass, property } = _decorator;
 
 @ccclass('GameController')
 export class GameController extends Component {
 
-    public gold: number = SETTINGS.INITIAL_GOLD;
-    public resources: ResourceState = {
-        tomato: 0,
-        blueberry: 0,
-        strawberry: 0,
-        milk: 0,
-    };
-    public seeds = { ...SETTINGS.INITIAL_SEEDS };
-    public animals = { ...SETTINGS.INITIAL_ANIMALS };
-    public plots: any[] = Array(SETTINGS.INITIAL_PLOTS).fill(null);
-    public workers = SETTINGS.INITIAL_WORKERS;
+    @property({type: GameView})
+    private gameView: GameView;
 
-    private addGold(amount: number) {
-        this.gold += amount;
-      }
-    
-    private spendGold(amount: number): boolean {
-        if (this.gold >= amount) {
-          this.gold -= amount;
-          return true;
+    protected onLoad(): void {
+        const savedData = SaveLoadManager.loadGame();
+        if (savedData) {
+            GameModel.Instance.loadFromSave(savedData);
+        } else {
+            GameModel.Instance.loadFromInitial(InitialState);
         }
-        return false;
-      }
-    
-    private addResource(type: keyof ResourceState, amount: number) {
-        this.resources[type] += amount;
     }
 }
-
-
