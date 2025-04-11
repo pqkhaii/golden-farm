@@ -26,6 +26,12 @@ export class GameModel extends Component {
         blueberry: 0,
         strawberry: 0
     };
+    public harvested: Record<string, number> = {
+        tomato: 0,
+        blueberry: 0,
+        strawberry: 0,
+        milk: 0
+    };
     public cows: number = 0;
     public plots: GameState['plots'] = [];
 
@@ -44,8 +50,7 @@ export class GameModel extends Component {
         for (let i = 0; i < initial.plots; i++) {
             this.plots.push({
                 id: i,
-                isBought: i < 3,
-                status: i < 3 ? PlotStatus.Empty : PlotStatus.Locked,
+                status: PlotStatus.Empty,
                 name: '',
                 timeLeft: 0
             });
@@ -54,7 +59,6 @@ export class GameModel extends Component {
     
     public loadFromSave(saved: GameState): void {
         this.gold = saved.gold;
-        console.log('gold load from save',this.gold)
         this.workers = saved.workers;
         this.idleWorkers = saved.idleWorkers;
         this.seeds = {...saved.seeds};
@@ -74,7 +78,13 @@ export class GameModel extends Component {
                 strawberry: this.seeds.strawberry
             },
             cows: this.cows,
-            plots: [...this.plots]
+            plots: [...this.plots],
+            harvested: {
+                tomato: this.harvested.tomato,
+                blueberry: this.harvested.blueberry,
+                strawberry: this.harvested.strawberry,
+                milk: this.harvested.milk
+            }
         };
     } 
 

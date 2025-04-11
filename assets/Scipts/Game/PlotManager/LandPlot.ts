@@ -1,5 +1,5 @@
 import { _decorator, Color, Component, Label, Node, Sprite } from 'cc';
-import { PlotData } from './PlotData';
+import { PlotData, PlotStatus } from './PlotData';
 const { ccclass, property } = _decorator;
 
 @ccclass('LandPlot')
@@ -19,7 +19,7 @@ export class LandPlot extends Component {
     public init(data: PlotData) {
         this.data = data;
 
-        if (!data.isBought) {
+        if (data.status === PlotStatus.Empty) {
             this.background.color = new Color(100, 100, 100); //gray
         } 
         else {

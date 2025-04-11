@@ -1,5 +1,4 @@
 export enum PlotStatus {
-    Locked,
     Empty,
     Used
 }
@@ -9,5 +8,4 @@ export interface PlotData {
     status: PlotStatus;
     name: string;
     timeLeft: number;
-    isBought: boolean;
 }

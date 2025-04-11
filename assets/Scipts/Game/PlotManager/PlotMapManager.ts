@@ -26,7 +26,6 @@ export class PlotMapManager extends Component {
     }
 
     private initPlots() {
-        console.log('init plots', GameModel.Instance.plots)
         const plotDataList = GameModel.Instance.plots;
         for (const data of plotDataList) {
             const plotNode = instantiate(this.landPlotPrefab);
@@ -42,7 +41,7 @@ export class PlotMapManager extends Component {
         this.node.addChild(this.buyPlotNode);
     
         this.buyPlotNode.on(Node.EventType.TOUCH_END, () => {
-        this.onBuyPlot();
+            this.onBuyPlot();
         });
     }
       
