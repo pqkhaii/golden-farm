@@ -2,6 +2,13 @@ import { PlotData } from "../PlotManager/PlotData";
 
 export type ResourceType = 'tomato' | 'blueberry' | 'strawberry' | 'milk';
 
+export enum ResourceTypeEnum {
+    tomato = 0,
+    blueberry = 1,
+    strawberry = 2,
+    milk = 3
+  }
+
 export interface ProduceConfig {
     name: string;
     growTime: number;
@@ -63,7 +70,7 @@ export interface GameState {
   
 export const ProduceConfigs: Record<ResourceType, ProduceConfig> = {
     tomato: {
-        name: 'Cà chua',
+        name: 'Tomato',
         growTime: 600,
         yieldPerCycle: 1,
         maxYield: 40,
@@ -71,7 +78,7 @@ export const ProduceConfigs: Record<ResourceType, ProduceConfig> = {
         harvestWindow: 3600
     },
     blueberry: {
-        name: 'Việt quất',
+        name: 'Blueberry',
         growTime: 900,
         yieldPerCycle: 1,
         maxYield: 40,
@@ -79,7 +86,7 @@ export const ProduceConfigs: Record<ResourceType, ProduceConfig> = {
         harvestWindow: 3600
     },
     strawberry: {
-        name: 'Dâu tây',
+        name: 'Strawberry',
         growTime: 300,
         yieldPerCycle: 1,
         maxYield: 20,
@@ -87,7 +94,7 @@ export const ProduceConfigs: Record<ResourceType, ProduceConfig> = {
         harvestWindow: 3600
     },
     milk: {
-        name: 'Sữa bò',
+        name: 'Milk',
         growTime: 1800,
         yieldPerCycle: 1,
         maxYield: 100,
@@ -96,27 +103,45 @@ export const ProduceConfigs: Record<ResourceType, ProduceConfig> = {
     }
 };
 
-export const ShopConfig = {
-    seeds: {
-        tomato: 30,
-        blueberry: 50,
-        strawberry: 400 // 400 / 10 hạt
-    },
-    cow: 100,
-    plot: 500,
-    worker: 500,
-    equipmentUpgrade: 500
-};
+/** Shop Config */
+type ShopItem = {
+    id: string;
+    name: string;
+    category: 'seed' | 'animal' | 'land' | 'worker' | 'upgrade';
+    price: number;
+    quantity: number;
+    ResourceTypeEnum: ResourceTypeEnum; // chỉ áp dụng cho seed/milk nếu cần
+  }
+  
+
+export const ShopItems: ShopItem[] = [
+    { id: 'seed_tomato', name: 'Tomato', category: 'seed', price: 30, quantity: 1, ResourceTypeEnum: ResourceTypeEnum.tomato },
+    { id: 'seed_blueberry', name: 'Blueberry', category: 'seed', price: 50, quantity: 1, ResourceTypeEnum: ResourceTypeEnum.blueberry },
+    { id: 'seed_strawberry', name: 'Strawberry', category: 'seed', price: 400, quantity: 10, ResourceTypeEnum: ResourceTypeEnum.strawberry },
+    { id: 'cow', name: 'Cow', category: 'animal', price: 100, quantity: 1, ResourceTypeEnum: ResourceTypeEnum.milk },
+];
+
+export enum ShopItemID {
+    TomatoSeed = 'tomatoSeed',
+    BlueberrySeed = 'blueberrySeed',
+    StrawberrySeed = 'strawberrySeed',
+    Cow = 'cow',
+  }
+/** */
 
 export const WorkerConfig = {
-    actionDuration: 120, // 2 phút mỗi hành động
-    cost: 500
+    actionDuration: 120,
+    price: 500
 };
 
 export const EquipmentConfig = {
-    upgradeCost: 500,
-    yieldBoostPercent: 10
+    yieldBoostPercent: 10,
+    upgradePrice: 500
 };
+
+export const plotConfig = {
+    price: 500
+}
 
 export const GameGoal = {
     targetGold: 1000000

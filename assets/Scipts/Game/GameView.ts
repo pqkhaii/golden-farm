@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node } from 'cc';
+import { _decorator, Component, Label, Node, SpriteFrame } from 'cc';
 import { GameModel } from './GameModel';
 import { PlotStatus } from './PlotManager/PlotData';
 const { ccclass, property } = _decorator;
@@ -25,6 +25,12 @@ export class GameView extends Component {
 
     @property({type: Label}) 
     private harvestedLabel: Label = null;
+
+    @property({type: Label}) 
+    private cowLabel: Label = null;
+
+    @property({type: SpriteFrame, tooltip: "List Resource Sprite"})
+    private listResourceSprite: SpriteFrame[] = [];
 
     protected onLoad(): void {
         GameView.Instance = this;
@@ -55,14 +61,11 @@ export class GameView extends Component {
         //harvested
         this.harvestedLabel.string = `${model.harvested.tomato} 🍅 | ${model.harvested.blueberry} 🍒 | ${model.harvested.strawberry} 🍓 | ${model.harvested.milk} 🥛`;
 
+        //cow
+        this.cowLabel.string = model.cows.toString();
     }
     
-    private onPlantTomato() {
-        console.log("Plant tomato clicked");
+    public getResourceSpriteFrame(type: number): SpriteFrame {
+        return this.listResourceSprite[type];
     }
-    
-    private onHarvestTomato() {
-        console.log("Harvest tomato clicked");
-    }
-    
 }

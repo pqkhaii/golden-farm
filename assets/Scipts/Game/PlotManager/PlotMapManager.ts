@@ -2,10 +2,10 @@ import { _decorator, Component, instantiate, Node, Prefab, Settings, UITransform
 import { PlotData, PlotStatus } from './PlotData';
 import { LandPlot } from './LandPlot';
 import { GameModel } from '../GameModel';
-import { InitialState, ShopConfig } from '../Data/GameConfig';
-import { GameController } from '../GameController';
 import { GameView } from '../GameView';
 import { SaveLoadManager } from '../SaveData/SaveLoadManager';
+import { ItemShop } from '../Shop/ItemShop';
+import { plotConfig, ShopItemID } from '../Data/GameConfig';
 const { ccclass, property } = _decorator;
 
 @ccclass('PlotMapManager')
@@ -46,7 +46,7 @@ export class PlotMapManager extends Component {
     }
       
     private onBuyPlot(): void {
-        const spendGold = GameModel.Instance.spendGold(ShopConfig.plot);
+        const spendGold = GameModel.Instance.spendGold(plotConfig.price);
         if(spendGold){
             GameView.Instance.updateUI();
 
@@ -67,7 +67,7 @@ export class PlotMapManager extends Component {
         
             this.node.removeChild(this.buyPlotNode);
             this.createBuyPlotButton();
-            SaveLoadManager.saveGame(GameModel.Instance.getState());
+            GameModel.Instance.updateDataGame();
         } 
         else {
             console.log("Không đủ vàng để mua đất");

@@ -1,6 +1,7 @@
 import { _decorator, Component, Node } from 'cc';
-import { GameState, InitialState, InitialStateConfig } from './Data/GameConfig';
+import { GameState, InitialState, InitialStateConfig, ShopItems } from './Data/GameConfig';
 import { PlotStatus } from './PlotManager/PlotData';
+import { SaveLoadManager } from './SaveData/SaveLoadManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('GameModel')
@@ -94,5 +95,14 @@ export class GameModel extends Component {
             return true;
         }
         return false;
+    }
+
+    public getShopPriceById(id: string): number {
+        const item = ShopItems.find(item => item.id === id);
+        return item?.price ?? 0;
+    }
+
+    public updateDataGame(): void {
+        SaveLoadManager.saveGame(this.getState());
     }
 }
