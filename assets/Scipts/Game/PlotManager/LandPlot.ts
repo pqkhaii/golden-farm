@@ -14,22 +14,28 @@ export class LandPlot extends Component {
     @property({type: Sprite})
     private background: Sprite;
 
-    private data: PlotData;
+    public data: PlotData;
 
     public init(data: PlotData) {
         this.data = data;
-
-        if (data.status === PlotStatus.Empty) {
-            this.background.color = new Color(100, 100, 100); //gray
-        } 
-        else {
-            this.background.color = new Color(200, 255, 200); //green
-        }
+        this.updateUI();
     }
 
-    public setTexts(name: string, time: number): void {
-        this.nameLabel.string = name;
-        this.cdLabel.string = time.toString();
+    public updateUI(): void {
+        switch (this.data.status) {
+            case PlotStatus.Empty:
+                this.background.color = new Color(150, 150, 150); // xám
+                break;
+            case PlotStatus.Used:
+                this.background.color = new Color(100, 200, 100); // xanh
+                break;
+            case PlotStatus.Harvested:
+                this.background.color = new Color(255, 215, 0); // vàng
+                break;
+        }
+
+        this.nameLabel.string = this.data.name;
+        this.cdLabel.string = this.data.timeLeft > 0 ? this.data.timeLeft.toString() : "Ready";
     }
 }
 

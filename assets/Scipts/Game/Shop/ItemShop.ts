@@ -23,5 +23,3 @@ export class ItemShop extends Component {
         this.iconSprite.spriteFrame = iconSpriteFrame;
     }
 }
-
-

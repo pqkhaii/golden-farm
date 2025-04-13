@@ -3,13 +3,14 @@ import { PlotData, PlotStatus } from './PlotData';
 import { LandPlot } from './LandPlot';
 import { GameModel } from '../GameModel';
 import { GameView } from '../GameView';
-import { SaveLoadManager } from '../SaveData/SaveLoadManager';
-import { ItemShop } from '../Shop/ItemShop';
 import { plotConfig, ShopItemID } from '../Data/GameConfig';
+import { PlantOptions } from '../PlantOptions/PlantOptions';
 const { ccclass, property } = _decorator;
 
 @ccclass('PlotMapManager')
 export class PlotMapManager extends Component {
+
+    public static Instance: PlotMapManager;
     
     @property({type: Prefab})
     private landPlotPrefab: Prefab;
@@ -21,6 +22,13 @@ export class PlotMapManager extends Component {
 
     private buyPlotNode: Node = null;
 
+    @property({type: PlantOptions})
+    private plantOptions: PlantOptions;
+
+    protected onLoad(): void {
+        PlotMapManager.Instance = this;
+    }
+
     protected start() {
         this.initPlots();
     }
@@ -31,10 +39,21 @@ export class PlotMapManager extends Component {
             const plotNode = instantiate(this.landPlotPrefab);
             this.landPlotPool.push(plotNode);
             this.node.addChild(plotNode);
-            plotNode.getComponent(LandPlot).init(data);
+
+            let plotComponent = plotNode.getComponent(LandPlot);
+            plotComponent.init(data);
+
+            //add event click plot
+            plotNode.on(Node.EventType.TOUCH_END, () => {
+                const plotData = plotComponent.data;
+                if (plotData.status === PlotStatus.Empty) {
+                    this.plantOptions.showAtPosition(plotNode, plotData)
+                }
+            });
         }
         this.createBuyPlotButton();
     }
+
       
     private createBuyPlotButton(): void {
         this.buyPlotNode = instantiate(this.buyPlotPrefab);
@@ -46,11 +65,13 @@ export class PlotMapManager extends Component {
     }
       
     private onBuyPlot(): void {
-        const spendGold = GameModel.Instance.spendGold(plotConfig.price);
+        let model = GameModel.Instance;
+        let view = GameView.Instance;
+        const spendGold = model.spendGold(plotConfig.price);
         if(spendGold){
-            GameView.Instance.updateUI();
+            view.updateUI();
 
-            const id = GameModel.Instance.plots.length;
+            const id = model.plots.length;
             const newPlotData = {
                 id,
                 isBought: true,
@@ -58,19 +79,26 @@ export class PlotMapManager extends Component {
                 name: "",
                 timeLeft: 0
             };
-            GameModel.Instance.plots.push(newPlotData);
+            model.plots.push(newPlotData);
         
             const newPlotNode = instantiate(this.landPlotPrefab);
-            this.node.insertChild(newPlotNode, this.node.children.length - 1); // Insert trước buyPlotNode
+            this.node.insertChild(newPlotNode, this.node.children.length - 1);
             newPlotNode.getComponent(LandPlot).init(newPlotData);
             this.landPlotPool.push(newPlotNode);
         
             this.node.removeChild(this.buyPlotNode);
             this.createBuyPlotButton();
-            GameModel.Instance.updateDataGame();
+            model.updateDataGame();
         } 
         else {
-            console.log("Không đủ vàng để mua đất");
+            view.showNotification('not enough Gold to buy Plot')
+        }
+    }
+
+    public updateUI(plotId: number): void {
+        const plotNode = this.landPlotPool.find(p => p.getComponent(LandPlot).data.id === plotId);
+        if (plotNode) {
+            plotNode.getComponent(LandPlot).updateUI();
         }
     }
 }

@@ -6,8 +6,9 @@ export enum ResourceTypeEnum {
     tomato = 0,
     blueberry = 1,
     strawberry = 2,
-    milk = 3
-  }
+    milk = 3,
+    cow = 4
+}
 
 export interface ProduceConfig {
     name: string;
@@ -46,7 +47,7 @@ export const InitialState: InitialStateConfig = {
     workers: 1,
     equipmentLevel: 1,
     gold: 2000000
-};
+}
 
 export interface GameState {
     gold: number;
@@ -101,7 +102,7 @@ export const ProduceConfigs: Record<ResourceType, ProduceConfig> = {
         sellPrice: 15,
         harvestWindow: 3600
     }
-};
+}
 
 /** Shop Config */
 type ShopItem = {
@@ -110,34 +111,33 @@ type ShopItem = {
     category: 'seed' | 'animal' | 'land' | 'worker' | 'upgrade';
     price: number;
     quantity: number;
-    ResourceTypeEnum: ResourceTypeEnum; // chỉ áp dụng cho seed/milk nếu cần
-  }
-  
+    ResourceTypeEnum: ResourceTypeEnum;
+}
 
 export const ShopItems: ShopItem[] = [
     { id: 'seed_tomato', name: 'Tomato', category: 'seed', price: 30, quantity: 1, ResourceTypeEnum: ResourceTypeEnum.tomato },
     { id: 'seed_blueberry', name: 'Blueberry', category: 'seed', price: 50, quantity: 1, ResourceTypeEnum: ResourceTypeEnum.blueberry },
     { id: 'seed_strawberry', name: 'Strawberry', category: 'seed', price: 400, quantity: 10, ResourceTypeEnum: ResourceTypeEnum.strawberry },
-    { id: 'cow', name: 'Cow', category: 'animal', price: 100, quantity: 1, ResourceTypeEnum: ResourceTypeEnum.milk },
-];
+    { id: 'cow', name: 'Cow', category: 'animal', price: 100, quantity: 1, ResourceTypeEnum: ResourceTypeEnum.cow },
+]
 
 export enum ShopItemID {
     TomatoSeed = 'tomatoSeed',
     BlueberrySeed = 'blueberrySeed',
     StrawberrySeed = 'strawberrySeed',
     Cow = 'cow',
-  }
+}
 /** */
 
 export const WorkerConfig = {
     actionDuration: 120,
     price: 500
-};
+}
 
 export const EquipmentConfig = {
     yieldBoostPercent: 10,
     upgradePrice: 500
-};
+}
 
 export const plotConfig = {
     price: 500
@@ -145,6 +145,4 @@ export const plotConfig = {
 
 export const GameGoal = {
     targetGold: 1000000
-};
-
-
+}

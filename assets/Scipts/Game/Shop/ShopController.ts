@@ -44,25 +44,28 @@ export class ShopController extends Component {
     }
 
     private onClickBuy(itemId: string): void {
+        let view = GameView.Instance;
+        let model = GameModel.Instance;
         const item = ShopItems.find(i => i.id === itemId);
         if (!item) return;
     
-        if (GameModel.Instance.Gold < item.price) {
-            console.log('Không đủ vàng');
+        if (model.Gold < item.price) {
+            view.showNotification('Not enough gold');
             return;
         }
     
-        GameModel.Instance.Gold -= item.price;
+        model.Gold -= item.price;
     
         if (item.category === 'seed') {
             const resourceKey = ResourceTypeEnum[item.ResourceTypeEnum] as ResourceType;
-            GameModel.Instance.seeds[resourceKey] += item.quantity;
+            model.seeds[resourceKey] += item.quantity;
         } else if (item.category === 'animal') {
-            GameModel.Instance.cows += item.quantity;
+            model.cows += item.quantity;
         }
     
-        GameView.Instance.updateUI();
-        GameModel.Instance.updateDataGame();
+        view.updateUI();
+        model.updateDataGame();
+        view.showNotification('Purchase successfully');
     }
 
     private show(): void {
@@ -73,5 +76,3 @@ export class ShopController extends Component {
         this.node.active = false;
     }
 }
-
-

@@ -1,6 +1,7 @@
 export enum PlotStatus {
     Empty,
-    Used
+    Used,
+    Harvested
 }
   
 export interface PlotData {

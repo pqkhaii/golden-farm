@@ -1,8 +1,8 @@
 import { _decorator, Component, Node } from 'cc';
 import { SaveLoadManager } from './SaveData/SaveLoadManager';
 import { GameModel } from './GameModel';
-import { InitialState, ShopConfig } from './Data/GameConfig';
-import { GameView } from './GameView';
+import { InitialState } from './Data/GameConfig';
+
 const { ccclass, property } = _decorator;
 
 @ccclass('GameController')
@@ -10,7 +10,7 @@ export class GameController extends Component {
 
     protected start(): void {
         const savedData = SaveLoadManager.loadGame();
-        console.log(savedData);
+        // console.log(savedData);
         if (savedData) {
             GameModel.Instance.loadFromSave(savedData);
         } else {
@@ -18,4 +18,6 @@ export class GameController extends Component {
             GameModel.Instance.loadFromInitial(InitialState);
         }
     }
+
+
 }

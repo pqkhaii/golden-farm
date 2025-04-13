@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, SpriteFrame } from 'cc';
+import { _decorator, Component, Label, Node, SpriteFrame, UITransform, Vec3, Animation } from 'cc';
 import { GameModel } from './GameModel';
 import { PlotStatus } from './PlotManager/PlotData';
 const { ccclass, property } = _decorator;
@@ -29,8 +29,17 @@ export class GameView extends Component {
     @property({type: Label}) 
     private cowLabel: Label = null;
 
-    @property({type: SpriteFrame, tooltip: "List Resource Sprite"})
+    @property({type: SpriteFrame, tooltip: 'List Resource Sprite'})
     private listResourceSprite: SpriteFrame[] = [];
+
+    @property({type: Node, tooltip: 'Notification'})
+    public popupNotification: Node;
+
+    @property({type: Label}) 
+    private notiLabel: Label = null;
+
+    @property({type: Animation}) 
+    private notiAnimation: Animation = null;
 
     protected onLoad(): void {
         GameView.Instance = this;
@@ -67,5 +76,10 @@ export class GameView extends Component {
     
     public getResourceSpriteFrame(type: number): SpriteFrame {
         return this.listResourceSprite[type];
+    }
+
+    public showNotification(text: string): void {
+        this.notiLabel.string = text;
+        this.notiAnimation.play();
     }
 }

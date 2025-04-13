@@ -1,7 +1,9 @@
 import { _decorator, Component, Node } from 'cc';
-import { GameState, InitialState, InitialStateConfig, ShopItems } from './Data/GameConfig';
-import { PlotStatus } from './PlotManager/PlotData';
+import { GameState, InitialState, InitialStateConfig, ProduceConfigs, ResourceType, ShopItems } from './Data/GameConfig';
+import { PlotData, PlotStatus } from './PlotManager/PlotData';
 import { SaveLoadManager } from './SaveData/SaveLoadManager';
+import { GameView } from './GameView';
+import { PlotMapManager } from './PlotManager/PlotMapManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('GameModel')
@@ -105,4 +107,76 @@ export class GameModel extends Component {
     public updateDataGame(): void {
         SaveLoadManager.saveGame(this.getState());
     }
+
+    public getSellableHarvestedItems(): { type: string; amount: number }[] {
+        // console.log('Harvested:', this.harvested);
+        const result: { type: string; amount: number }[] = [];
+        for (const key in this.harvested) {
+            const amount = this.harvested[key];
+            if (amount > 0) {
+                result.push({
+                    type: key,
+                    amount: amount
+                });
+            }
+        }
+    
+        return result;
+    }
+
+    public sellHarvestedItem(type: ResourceType, amount: number): boolean {
+        let view = GameView.Instance;
+        if (this.harvested[type] < amount) {
+            console.log(`Not enough ${type} to sell`);
+            return false;
+        }
+    
+        const price = ProduceConfigs[type].sellPrice;
+        const totalPrice = price * amount;
+    
+        this.harvested[type] -= amount;
+    
+        this.gold += totalPrice;
+        view.showNotification(`Sell ${amount} ${ProduceConfigs[type].name} and collect ${totalPrice} gold.`)
+        return true;
+    }
+    
+    public plantOrRaise(plotId: number, type: string): boolean {
+        const plot = this.plots.find(p => p.id === plotId);
+    
+        if (plot && plot.status === PlotStatus.Empty) {
+            if (type === 'tomato' || type === 'blueberry' || type === 'strawberry') {
+                this.plantCrop(plot, type);
+            } else if (type === 'milk') {
+                this.raiseCow(plot);
+            }
+            PlotMapManager.Instance.updateUI(plotId);
+            GameView.Instance.updateUI();
+            this.updateDataGame();
+            return true;
+        }
+    
+        return false;
+    }
+    
+    private plantCrop(plot: PlotData, cropType: string) {
+        const produceConfig = ProduceConfigs[cropType];
+        
+        if (produceConfig && this.seeds[cropType] > 0) {
+            plot.status = PlotStatus.Used; 
+            plot.name = produceConfig.name;
+            plot.timeLeft = produceConfig.growTime;
+            this.seeds[cropType]--;
+        }
+    }
+    
+    private raiseCow(plot: PlotData) {
+        if (this.cows > 0) {
+            plot.status = PlotStatus.Used;
+            plot.name = 'Cow';
+            plot.timeLeft = ProduceConfigs.milk.growTime;
+            this.cows--;
+        }
+    }
+    
 }
