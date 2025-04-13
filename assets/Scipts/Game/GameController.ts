@@ -14,7 +14,6 @@ export class GameController extends Component {
         if (savedData) {
             GameModel.Instance.loadFromSave(savedData);
         } else {
-            console.log('log ra nếu chưa có local', InitialState)
             GameModel.Instance.loadFromInitial(InitialState);
         }
     }

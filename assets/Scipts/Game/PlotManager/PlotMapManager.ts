@@ -89,9 +89,20 @@ export class PlotMapManager extends Component {
             this.node.removeChild(this.buyPlotNode);
             this.createBuyPlotButton();
             model.updateDataGame();
+
+            let plotComponent = newPlotNode.getComponent(LandPlot);
+
+            newPlotNode.on(Node.EventType.TOUCH_END, () => {
+                const plotData = plotComponent.data;
+                if (plotData.status === PlotStatus.Empty) {
+                    this.plantOptions.showAtPosition(newPlotNode, plotData)
+                }
+            });
+
+            view.showNotification('Buy new plot successfully')
         } 
         else {
-            view.showNotification('not enough Gold to buy Plot')
+            view.showNotification('Not enough Gold to buy Plot')
         }
     }
 
