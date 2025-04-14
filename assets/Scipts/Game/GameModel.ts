@@ -54,6 +54,7 @@ export class GameModel extends Component {
             this.plots.push({
                 id: i,
                 status: PlotStatus.Empty,
+                type: null,
                 name: '',
                 timeLeft: 0
             });
@@ -141,42 +142,85 @@ export class GameModel extends Component {
         return true;
     }
     
-    public plantOrRaise(plotId: number, type: string): boolean {
+    public plantOrRaise(plotId: number, type: string): void {
         const plot = this.plots.find(p => p.id === plotId);
     
         if (plot && plot.status === PlotStatus.Empty) {
             if (type === 'tomato' || type === 'blueberry' || type === 'strawberry') {
                 this.plantCrop(plot, type);
-            } else if (type === 'milk') {
+            } else if (type === 'cow') {
                 this.raiseCow(plot);
             }
             PlotMapManager.Instance.updateUI(plotId);
             GameView.Instance.updateUI();
             this.updateDataGame();
-            return true;
         }
-    
-        return false;
     }
     
-    private plantCrop(plot: PlotData, cropType: string) {
+    private plantCrop(plot: PlotData, cropType: string): void {
         const produceConfig = ProduceConfigs[cropType];
+        console.log(produceConfig)
+        console.log('this.seeds[cropType]', this.seeds[cropType])
         
         if (produceConfig && this.seeds[cropType] > 0) {
             plot.status = PlotStatus.Used; 
             plot.name = produceConfig.name;
+            plot.type = cropType;
             plot.timeLeft = produceConfig.growTime;
             this.seeds[cropType]--;
+        }else{
+            console.log('Not Enough this seed');
         }
     }
     
-    private raiseCow(plot: PlotData) {
+    private raiseCow(plot: PlotData): void {
         if (this.cows > 0) {
             plot.status = PlotStatus.Used;
             plot.name = 'Cow';
+            plot.type = 'milk';
             plot.timeLeft = ProduceConfigs.milk.growTime;
             this.cows--;
         }
     }
     
+    public harvestPlot(plotId: number): void {
+        let view = GameView.Instance;
+        const plot = this.plots.find(p => p.id === plotId);
+        if (!plot || plot.status !== PlotStatus.Harvested) return;
+    
+        const type = this.getResourceTypeFromName(plot.name);
+        if (type) {
+            this.harvested[type]++;
+            plot.status = PlotStatus.Empty;
+            plot.name = '';
+            plot.timeLeft = 0;
+    
+            PlotMapManager.Instance.updateUI(plotId);
+            view.updateUI();
+            this.updateDataGame();
+            view.showNotification(`Harvested ${type}!`);
+        }
+    }
+
+    public addHarvested(type: ResourceType, amount: number): void {
+        if (!this.harvested[type]) {
+            this.harvested[type] = 0;
+        }
+        this.harvested[type] += amount;
+        this.updateDataGame();
+    }
+
+    // Helper để ánh xạ từ tên cây sang resource type
+    private getResourceTypeFromName(name: string): string | null {
+        switch (name.toLowerCase()) {
+            case 'tomato':
+            case 'blueberry':
+            case 'strawberry':
+                return name.toLowerCase();
+            case 'cow':
+                return 'milk';
+            default:
+                return null;
+        }
+    }
 }

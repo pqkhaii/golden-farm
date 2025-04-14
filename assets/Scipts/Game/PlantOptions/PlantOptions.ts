@@ -9,8 +9,11 @@ export class PlantOptions extends Component {
     @property({type: Prefab})
     private buttonPrefab: Prefab;
 
-    @property({ type: Node })
+    @property({type: Node})
     private buttonContainer: Node;
+
+    @property({type: Node})
+    private bgNode: Node;
 
     private currentPlot: any;
 
@@ -19,8 +22,8 @@ export class PlantOptions extends Component {
         this.node.active = true;
 
         const worldPos = targetNode.getWorldPosition();
-        const localPos = this.node.parent.getComponent(UITransform).convertToNodeSpaceAR(worldPos);
-        this.node.setPosition(localPos);
+        const localPos = this.bgNode.parent.getComponent(UITransform).convertToNodeSpaceAR(worldPos);
+        this.bgNode.setPosition(localPos);
 
         this.renderButtons();
     }
@@ -37,7 +40,7 @@ export class PlantOptions extends Component {
             { label: 'Plant Tomato', type: 'tomato' },
             { label: 'Plant Blueberry', type: 'blueberry' },
             { label: 'Plant Strawberry', type: 'strawberry' },
-            { label: 'Raise Cow', type: 'milk' }
+            { label: 'Raise Cow', type: 'cow' }
         ];
 
         for (const option of options) {
@@ -51,7 +54,7 @@ export class PlantOptions extends Component {
         }
     }
 
-    private onSelectOption(type: string) {
+    private onSelectOption(type: string): void {
         if (this.currentPlot && this.currentPlot.status === PlotStatus.Empty) {
             GameModel.Instance.plantOrRaise(this.currentPlot.id, type);
             this.hide();

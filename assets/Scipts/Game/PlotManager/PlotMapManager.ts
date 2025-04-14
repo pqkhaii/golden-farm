@@ -3,7 +3,7 @@ import { PlotData, PlotStatus } from './PlotData';
 import { LandPlot } from './LandPlot';
 import { GameModel } from '../GameModel';
 import { GameView } from '../GameView';
-import { plotConfig, ShopItemID } from '../Data/GameConfig';
+import { plotConfig, ProduceConfigs, ResourceType, ShopItemID } from '../Data/GameConfig';
 import { PlantOptions } from '../PlantOptions/PlantOptions';
 const { ccclass, property } = _decorator;
 
@@ -25,6 +25,8 @@ export class PlotMapManager extends Component {
     @property({type: PlantOptions})
     private plantOptions: PlantOptions;
 
+    private timeCounter: number = 0;
+
     protected onLoad(): void {
         PlotMapManager.Instance = this;
     }
@@ -32,6 +34,38 @@ export class PlotMapManager extends Component {
     protected start() {
         this.initPlots();
     }
+
+    protected update(dt: number): void {
+        this.timeCounter += dt;
+        if (this.timeCounter >= 1) {
+            this.timeCounter = 0;
+            this.updateCountdown();
+        }
+    }
+
+    private updateCountdown(): void {
+        let hasUpdate = false;
+    
+        for (const plotNode of this.landPlotPool) {
+            const plot = plotNode.getComponent(LandPlot);
+            const data = plot.data;
+    
+            if (data.status === PlotStatus.Used && data.timeLeft > 0) {
+                data.timeLeft -= 1;
+                if (data.timeLeft <= 0) {
+                    data.timeLeft = 0;
+                    data.status = PlotStatus.Harvested;
+                }
+                plot.updateUI();
+                hasUpdate = true;
+            }
+        }
+    
+        if (hasUpdate) {
+            GameModel.Instance.updateDataGame();
+        }
+    }
+    
 
     private initPlots() {
         const plotDataList = GameModel.Instance.plots;
@@ -45,10 +79,58 @@ export class PlotMapManager extends Component {
 
             //add event click plot
             plotNode.on(Node.EventType.TOUCH_END, () => {
-                const plotData = plotComponent.data;
-                if (plotData.status === PlotStatus.Empty) {
-                    this.plantOptions.showAtPosition(plotNode, plotData)
-                }
+                plotNode.on(Node.EventType.TOUCH_END, () => {
+                    const plotData = plotComponent.data;
+                    
+                    if (plotData.status === PlotStatus.Empty) {
+                        this.plantOptions.showAtPosition(plotNode, plotData);
+                        return;
+                    }
+                
+                    if (plotData.status === PlotStatus.Used) {
+                        const cfg = ProduceConfigs[plotData.name as ResourceType];
+                        const now = Date.now() / 1000;
+                        const startTime = plotData.startTime ?? now;
+                        const elapsed = now - startTime;
+                
+                        const cyclesPassed = Math.floor(elapsed / cfg.growTime);
+                        const harvestedAmount = plotData.harvestedAmount ?? 0;
+                        const newHarvest = Math.min(cfg.maxYield - harvestedAmount, cyclesPassed);
+                        
+                        const totalLifetime = cfg.growTime * cfg.maxYield;
+                        const expired = elapsed > totalLifetime + cfg.harvestWindow;
+                
+                        if (expired) {
+                            plotData.status = PlotStatus.Empty;
+                            plotData.name = "";
+                            plotData.startTime = 0;
+                            plotData.harvestedAmount = 0;
+                            plotData.timeLeft = 0;
+                            GameModel.Instance.updateDataGame();
+                            GameView.Instance.showNotification("Your crop has died!");
+                            this.updateUI(plotData.id);
+                            return;
+                        }
+                
+                        if (newHarvest > 0) {
+                            GameModel.Instance.addHarvested(plotData.name as ResourceType, newHarvest);
+                            plotData.harvestedAmount = harvestedAmount + newHarvest;
+                            plotData.timeLeft = (cyclesPassed + 1) * cfg.growTime - elapsed;
+                
+                            if (plotData.harvestedAmount >= cfg.maxYield) {
+                                plotData.status = PlotStatus.Harvested;
+                            }
+                
+                            GameModel.Instance.updateDataGame();
+                            GameView.Instance.updateUI();
+                            GameView.Instance.showNotification(`Harvested ${newHarvest} ${cfg.name}!`);
+                            this.updateUI(plotData.id);
+                        } else {
+                            GameView.Instance.showNotification("Nothing to harvest yet!");
+                        }
+                    }
+                });
+                
             });
         }
         this.createBuyPlotButton();
@@ -76,6 +158,7 @@ export class PlotMapManager extends Component {
                 id,
                 isBought: true,
                 status: PlotStatus.Empty,
+                type: null,
                 name: "",
                 timeLeft: 0
             };
@@ -95,7 +178,9 @@ export class PlotMapManager extends Component {
             newPlotNode.on(Node.EventType.TOUCH_END, () => {
                 const plotData = plotComponent.data;
                 if (plotData.status === PlotStatus.Empty) {
-                    this.plantOptions.showAtPosition(newPlotNode, plotData)
+                    this.plantOptions.showAtPosition(newPlotNode, plotData);
+                } else if (plotData.status === PlotStatus.Harvested) {
+                    GameModel.Instance.harvestPlot(plotData.id);
                 }
             });
 
