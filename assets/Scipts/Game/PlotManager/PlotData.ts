@@ -1,9 +1,7 @@
-import { ResourceType } from "../Data/GameConfig";
-
 export enum PlotStatus {
     Empty,
     Used,
-    Harvested
+    ReadyToHarvest
 }
   
 export interface PlotData {
@@ -12,6 +10,7 @@ export interface PlotData {
     name: string;
     type: string;
     timeLeft: number;
-    startTime?: number;
     harvestedAmount?: number;
+    yieldPerCycle: number,
+    maxYield: number,
 }

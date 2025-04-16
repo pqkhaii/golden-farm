@@ -1,5 +1,5 @@
 import { _decorator, Component, Node } from 'cc';
-import { GameState, InitialState, InitialStateConfig, ProduceConfigs, ResourceType, ShopItems } from './Data/GameConfig';
+import { EquipmentConfig, GameState, InitialState, InitialStateConfig, ProduceConfigs, ResourceType, ShopItems } from './Data/GameConfig';
 import { PlotData, PlotStatus } from './PlotManager/PlotData';
 import { SaveLoadManager } from './SaveData/SaveLoadManager';
 import { GameView } from './GameView';
@@ -38,6 +38,9 @@ export class GameModel extends Component {
     public cows: number = 0;
     public plots: GameState['plots'] = [];
 
+    private _workerTimer: any = null;
+    private _workerTaskRunning: boolean = false;
+
     protected onLoad(): void {
         GameModel.Instance = this;
     }
@@ -56,7 +59,9 @@ export class GameModel extends Component {
                 status: PlotStatus.Empty,
                 type: null,
                 name: '',
-                timeLeft: 0
+                timeLeft: 0,
+                yieldPerCycle: 0,
+                maxYield: 0
             });
         }
     }
@@ -68,6 +73,7 @@ export class GameModel extends Component {
         this.seeds = {...saved.seeds};
         this.cows = saved.cows;
         this.plots = [...saved.plots];
+        this.equipmentLevel = saved.equipmentLevel;
     }
     
     public getState(): GameState {
@@ -109,22 +115,6 @@ export class GameModel extends Component {
         SaveLoadManager.saveGame(this.getState());
     }
 
-    public getSellableHarvestedItems(): { type: string; amount: number }[] {
-        // console.log('Harvested:', this.harvested);
-        const result: { type: string; amount: number }[] = [];
-        for (const key in this.harvested) {
-            const amount = this.harvested[key];
-            if (amount > 0) {
-                result.push({
-                    type: key,
-                    amount: amount
-                });
-            }
-        }
-    
-        return result;
-    }
-
     public sellHarvestedItem(type: ResourceType, amount: number): boolean {
         let view = GameView.Instance;
         if (this.harvested[type] < amount) {
@@ -159,17 +149,19 @@ export class GameModel extends Component {
     
     private plantCrop(plot: PlotData, cropType: string): void {
         const produceConfig = ProduceConfigs[cropType];
-        console.log(produceConfig)
-        console.log('this.seeds[cropType]', this.seeds[cropType])
+        // console.log(produceConfig)
+        // console.log('this.seeds[cropType]', this.seeds[cropType])
         
         if (produceConfig && this.seeds[cropType] > 0) {
             plot.status = PlotStatus.Used; 
             plot.name = produceConfig.name;
             plot.type = cropType;
             plot.timeLeft = produceConfig.growTime;
+            plot.yieldPerCycle = produceConfig.yieldPerCycle;
+            plot.maxYield = produceConfig.maxYield;
             this.seeds[cropType]--;
-        }else{
-            console.log('Not Enough this seed');
+        } else {
+            GameView.Instance.showNotification('Not Enough this seed');
         }
     }
     
@@ -179,28 +171,45 @@ export class GameModel extends Component {
             plot.name = 'Cow';
             plot.type = 'milk';
             plot.timeLeft = ProduceConfigs.milk.growTime;
+            plot.yieldPerCycle = ProduceConfigs.milk.yieldPerCycle;
+            plot.maxYield = ProduceConfigs.milk.maxYield;
             this.cows--;
+        } else {
+            GameView.Instance.showNotification('Not enough cow');
         }
     }
     
     public harvestPlot(plotId: number): void {
         let view = GameView.Instance;
         const plot = this.plots.find(p => p.id === plotId);
-        if (!plot || plot.status !== PlotStatus.Harvested) return;
+        if (!plot || plot.status !== PlotStatus.ReadyToHarvest) return;
     
         const type = this.getResourceTypeFromName(plot.name);
         if (type) {
-            this.harvested[type]++;
-            plot.status = PlotStatus.Empty;
-            plot.name = '';
-            plot.timeLeft = 0;
+            const baseYield = ProduceConfigs[type].yieldPerCycle;
+            const bonusPercent = this.equipmentLevel * EquipmentConfig.yieldBoostPercent;
+            const finalYield = Math.floor(baseYield * (1 + bonusPercent / 100));
+    
+            this.addHarvested(type as ResourceType, finalYield);
+            
+            let yieldPerCycle = plot.yieldPerCycle;
+            let maxYield = plot.maxYield;
+            console.log('yieldPerCycle before', yieldPerCycle)
+            if(yieldPerCycle <= maxYield){
+                yieldPerCycle ++;
+                this.resetYieldPerCyclePlot(plot, type as ResourceType);
+            }else{
+                this.resetPlot(plot);
+            }
+            console.log('yieldPerCycle after', yieldPerCycle)
     
             PlotMapManager.Instance.updateUI(plotId);
             view.updateUI();
             this.updateDataGame();
-            view.showNotification(`Harvested ${type}!`);
+            view.showNotification(`Harvested ${finalYield} ${type}!`);
         }
     }
+    
 
     public addHarvested(type: ResourceType, amount: number): void {
         if (!this.harvested[type]) {
@@ -210,7 +219,22 @@ export class GameModel extends Component {
         this.updateDataGame();
     }
 
-    // Helper để ánh xạ từ tên cây sang resource type
+    public upgradeEquipment(): boolean {
+        let view = GameView.Instance;
+        const upgradeCost = EquipmentConfig.upgradePrice;
+        if (this.spendGold(upgradeCost)) {
+            this.equipmentLevel++;
+            view.showNotification(`Upgraded equipment to level ${this.equipmentLevel}. Yield increased by ${this.equipmentLevel * EquipmentConfig.yieldBoostPercent}%`);
+            this.updateDataGame();
+            view.updateUI();
+            return true;
+        } else {
+            view.showNotification('Not enough gold to upgrade equipment.');
+            return false;
+        }
+    }
+
+    // name to resource type
     private getResourceTypeFromName(name: string): string | null {
         switch (name.toLowerCase()) {
             case 'tomato':
@@ -222,5 +246,57 @@ export class GameModel extends Component {
             default:
                 return null;
         }
+    }
+
+    //Worker
+    public startAutoWorkerTask(): void {
+        if (this._workerTaskRunning) return;
+    
+        this._workerTaskRunning = true;
+        this._workerTimer = setInterval(() => {
+            this.assignWorkerTasks();
+        }, 5000); 
+    }
+    
+    private assignWorkerTasks(): void {
+        if (this.idleWorkers <= 0) return;
+    
+        for (const plot of this.plots) {
+            if (this.idleWorkers <= 0) break;
+    
+            if (plot.status === PlotStatus.ReadyToHarvest) {
+                this.idleWorkers--;
+                this.harvestPlot(plot.id);
+                GameView.Instance.updateUI();
+                this.handleWorkerAction(() => this.harvestPlot(plot.id));
+            } else if (plot.status === PlotStatus.Empty) {
+                // if (this.seeds['tomato'] > 0) {
+                //     this.idleWorkers--;
+                //     this.handleWorkerAction(() => this.plantOrRaise(plot.id, 'tomato'));
+                // }
+            }
+        }
+    }
+    
+    private handleWorkerAction(action: () => void): void {
+        setTimeout(() => {
+            action();
+            this.idleWorkers++;
+            GameView.Instance.updateUI();
+        }, 120_000);
+    }
+
+    private resetPlot(plot: PlotData): void {
+        plot.status = PlotStatus.Empty;
+        plot.name = '';
+        plot.type = '';
+        plot.timeLeft = 0;
+        plot.harvestedAmount = 0;
+    }
+
+    private resetYieldPerCyclePlot(plot: PlotData, cropType: ResourceType): void {
+        plot.status = PlotStatus.Used;
+        const produceConfig = ProduceConfigs[cropType];
+        plot.timeLeft = produceConfig.growTime;
     }
 }

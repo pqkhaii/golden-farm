@@ -27,12 +27,17 @@ export class PlotMapManager extends Component {
 
     private timeCounter: number = 0;
 
+    private gameView: GameView;
+    private gameModel: GameModel;
+
     protected onLoad(): void {
         PlotMapManager.Instance = this;
     }
 
     protected start() {
         this.initPlots();
+        this.gameView = GameView.Instance;
+        this.gameModel = this.gameModel;
     }
 
     protected update(dt: number): void {
@@ -54,7 +59,7 @@ export class PlotMapManager extends Component {
                 data.timeLeft -= 1;
                 if (data.timeLeft <= 0) {
                     data.timeLeft = 0;
-                    data.status = PlotStatus.Harvested;
+                    data.status = PlotStatus.ReadyToHarvest;
                 }
                 plot.updateUI();
                 hasUpdate = true;
@@ -62,13 +67,13 @@ export class PlotMapManager extends Component {
         }
     
         if (hasUpdate) {
-            GameModel.Instance.updateDataGame();
+            this.gameModel.updateDataGame();
         }
     }
     
 
     private initPlots() {
-        const plotDataList = GameModel.Instance.plots;
+        const plotDataList = this.gameModel.plots;
         for (const data of plotDataList) {
             const plotNode = instantiate(this.landPlotPrefab);
             this.landPlotPool.push(plotNode);
@@ -78,60 +83,7 @@ export class PlotMapManager extends Component {
             plotComponent.init(data);
 
             //add event click plot
-            plotNode.on(Node.EventType.TOUCH_END, () => {
-                plotNode.on(Node.EventType.TOUCH_END, () => {
-                    const plotData = plotComponent.data;
-                    
-                    if (plotData.status === PlotStatus.Empty) {
-                        this.plantOptions.showAtPosition(plotNode, plotData);
-                        return;
-                    }
-                
-                    if (plotData.status === PlotStatus.Used) {
-                        const cfg = ProduceConfigs[plotData.name as ResourceType];
-                        const now = Date.now() / 1000;
-                        const startTime = plotData.startTime ?? now;
-                        const elapsed = now - startTime;
-                
-                        const cyclesPassed = Math.floor(elapsed / cfg.growTime);
-                        const harvestedAmount = plotData.harvestedAmount ?? 0;
-                        const newHarvest = Math.min(cfg.maxYield - harvestedAmount, cyclesPassed);
-                        
-                        const totalLifetime = cfg.growTime * cfg.maxYield;
-                        const expired = elapsed > totalLifetime + cfg.harvestWindow;
-                
-                        if (expired) {
-                            plotData.status = PlotStatus.Empty;
-                            plotData.name = "";
-                            plotData.startTime = 0;
-                            plotData.harvestedAmount = 0;
-                            plotData.timeLeft = 0;
-                            GameModel.Instance.updateDataGame();
-                            GameView.Instance.showNotification("Your crop has died!");
-                            this.updateUI(plotData.id);
-                            return;
-                        }
-                
-                        if (newHarvest > 0) {
-                            GameModel.Instance.addHarvested(plotData.name as ResourceType, newHarvest);
-                            plotData.harvestedAmount = harvestedAmount + newHarvest;
-                            plotData.timeLeft = (cyclesPassed + 1) * cfg.growTime - elapsed;
-                
-                            if (plotData.harvestedAmount >= cfg.maxYield) {
-                                plotData.status = PlotStatus.Harvested;
-                            }
-                
-                            GameModel.Instance.updateDataGame();
-                            GameView.Instance.updateUI();
-                            GameView.Instance.showNotification(`Harvested ${newHarvest} ${cfg.name}!`);
-                            this.updateUI(plotData.id);
-                        } else {
-                            GameView.Instance.showNotification("Nothing to harvest yet!");
-                        }
-                    }
-                });
-                
-            });
+            this.addEventClickPlot(plotComponent, plotNode);
         }
         this.createBuyPlotButton();
     }
@@ -147,22 +99,22 @@ export class PlotMapManager extends Component {
     }
       
     private onBuyPlot(): void {
-        let model = GameModel.Instance;
-        let view = GameView.Instance;
-        const spendGold = model.spendGold(plotConfig.price);
+        const spendGold = this.gameModel.spendGold(plotConfig.price);
         if(spendGold){
-            view.updateUI();
+            this.gameView.updateUI();
 
-            const id = model.plots.length;
+            const id = this.gameModel.plots.length;
             const newPlotData = {
                 id,
                 isBought: true,
                 status: PlotStatus.Empty,
                 type: null,
                 name: "",
-                timeLeft: 0
+                timeLeft: 0,
+                yieldPerCycle: 0,
+                maxYield: 0
             };
-            model.plots.push(newPlotData);
+            this.gameModel.plots.push(newPlotData);
         
             const newPlotNode = instantiate(this.landPlotPrefab);
             this.node.insertChild(newPlotNode, this.node.children.length - 1);
@@ -171,30 +123,47 @@ export class PlotMapManager extends Component {
         
             this.node.removeChild(this.buyPlotNode);
             this.createBuyPlotButton();
-            model.updateDataGame();
+            this.gameModel.updateDataGame();
 
             let plotComponent = newPlotNode.getComponent(LandPlot);
 
-            newPlotNode.on(Node.EventType.TOUCH_END, () => {
-                const plotData = plotComponent.data;
-                if (plotData.status === PlotStatus.Empty) {
-                    this.plantOptions.showAtPosition(newPlotNode, plotData);
-                } else if (plotData.status === PlotStatus.Harvested) {
-                    GameModel.Instance.harvestPlot(plotData.id);
-                }
-            });
+            this.addEventClickPlot(plotComponent, newPlotNode);
 
-            view.showNotification('Buy new plot successfully')
+            this.gameView.showNotification('Buy new plot successfully')
         } 
         else {
-            view.showNotification('Not enough Gold to buy Plot')
+            this.gameView.showNotification('Not enough Gold to buy Plot')
         }
+    }
+
+    private addEventClickPlot(plotComponent: LandPlot, plotNode: Node): void {
+        plotNode.off(Node.EventType.TOUCH_END);
+        plotNode.on(Node.EventType.TOUCH_END, () => {
+            const plotData = plotComponent.data;
+
+            if (plotData.status === PlotStatus.Empty) {
+                this.plantOptions.showAtPosition(plotNode, plotData);
+                return;
+            }
+
+            if (plotData.status === PlotStatus.Used) {
+                this.gameView.showNotification("This plot harvested or raised");
+            }
+
+            if (plotData.status === PlotStatus.ReadyToHarvest) {
+                this.gameModel.harvestPlot(plotComponent.data.id);
+                this.updateUI(plotData.id);
+            }
+        });
     }
 
     public updateUI(plotId: number): void {
         const plotNode = this.landPlotPool.find(p => p.getComponent(LandPlot).data.id === plotId);
-        if (plotNode) {
-            plotNode.getComponent(LandPlot).updateUI();
-        }
+        
+        if(!plotNode) return;
+
+        const plotComponent = plotNode.getComponent(LandPlot);
+        plotComponent.updateUI();
+        this.addEventClickPlot(plotComponent, plotNode);
     }
 }

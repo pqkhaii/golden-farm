@@ -33,12 +33,9 @@ export class LandPlot extends Component {
             case PlotStatus.Used:
                 this.background.color = new Color(100, 200, 100); // xanh
                 this.nameLabel.string = this.data.name;
-                console.log('plot type: ',this.data.type)
-                console.log('ProduceConfigs: ',ProduceConfigs['tomato'])
                 const config = ProduceConfigs[this.data.type];
-                console.log(config)
                 if (config) {
-                    console.log(this.data.timeLeft)
+                    // console.log(this.data.timeLeft)
                     if (this.data.timeLeft > 0) {
                         this.cdLabel.string = this.convertTime(this.data.timeLeft);
                     } else {
@@ -47,16 +44,15 @@ export class LandPlot extends Component {
                 }
                 break;
     
-            case PlotStatus.Harvested:
+            case PlotStatus.ReadyToHarvest:
                 this.background.color = new Color(255, 215, 0); // vàng
                 this.nameLabel.string = this.data.name;
-                this.cdLabel.string = "Harvested";
+                this.cdLabel.string = "Ready To Harvest";
                 break;
         }
     }
 
     private convertTime(seconds: number): string {
-        console.log(seconds)
         const m = Math.floor(seconds / 60);
         const s = seconds % 60;
         return `${m}:${s < 10 ? '0' : ''}${s}`;

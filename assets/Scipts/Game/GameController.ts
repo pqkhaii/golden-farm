@@ -1,7 +1,7 @@
 import { _decorator, Component, Node } from 'cc';
 import { SaveLoadManager } from './SaveData/SaveLoadManager';
 import { GameModel } from './GameModel';
-import { InitialState } from './Data/GameConfig';
+import { InitialState, ResourceType } from './Data/GameConfig';
 
 const { ccclass, property } = _decorator;
 
@@ -17,6 +17,8 @@ export class GameController extends Component {
             GameModel.Instance.loadFromInitial(InitialState);
         }
     }
-
-
+    
+    private onTouchupgradeEquipment(): void {
+        GameModel.Instance.upgradeEquipment();
+    }
 }
