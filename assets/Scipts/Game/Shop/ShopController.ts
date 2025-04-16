@@ -49,12 +49,12 @@ export class ShopController extends Component {
         const item = ShopItems.find(i => i.id === itemId);
         if (!item) return;
     
-        if (model.Gold < item.price) {
+        if (!model.spendGold(item.price)) {
             view.showNotification('Not enough gold');
             return;
         }
     
-        model.Gold -= item.price;
+        model.spendGold(item.price);
     
         if (item.category === 'seed') {
             const resourceKey = ResourceTypeEnum[item.ResourceTypeEnum] as ResourceType;

@@ -1,5 +1,5 @@
-import { _decorator, Component, Node } from 'cc';
-import { EquipmentConfig, GameState, InitialState, InitialStateConfig, ProduceConfigs, ResourceType, ResourceTypeEnum, ShopItems } from './Data/GameConfig';
+import { _decorator, Component, Node, randomRangeInt } from 'cc';
+import { EquipmentConfig, GameState, InitialState, InitialStateConfig, ProduceConfigs, ResourceType, ResourceTypeEnum, ShopItems, WorkerConfig } from './Data/GameConfig';
 import { PlotData, PlotStatus } from './PlotManager/PlotData';
 import { SaveLoadManager } from './SaveData/SaveLoadManager';
 import { GameView } from './GameView';
@@ -11,15 +11,7 @@ export class GameModel extends Component {
 
     public static Instance: GameModel;
 
-    private gold: number = 0;
-
-    public get Gold() : number {
-        return this.gold;
-    }
-    
-    public set Gold(v : number) {
-        this.gold = v;
-    }
+    public gold: number = 0;
 
     public equipmentLevel: number = 1;
     public workers: number = 0;
@@ -107,6 +99,14 @@ export class GameModel extends Component {
         return false;
     }
 
+    public addGold(amount: number): void {
+        this.gold += amount;
+        console.log(this.gold);
+        if(this.gold >= 1000000){
+            GameView.Instance.popupWinGame.active = true;
+        }
+    }
+
     public getShopPriceById(id: string): number {
         const item = ShopItems.find(item => item.id === id);
         return item?.price ?? 0;
@@ -120,7 +120,7 @@ export class GameModel extends Component {
     public sellHarvestedItem(type: ResourceType, quantity: number): boolean {
         let view = GameView.Instance;
         if (this.harvested[type] < quantity) {
-            console.log(`Not enough ${type} to sell`);
+            // console.log(`Not enough ${type} to sell`);
             return false;
         }
     
@@ -129,7 +129,7 @@ export class GameModel extends Component {
     
         this.harvested[type] -= quantity;
     
-        this.gold += totalPrice;
+        this.addGold(totalPrice);
         view.showNotification(`Sell ${quantity} ${ProduceConfigs[type].name} and collect ${totalPrice} gold.`)
         view.updateUI();
         this.updateDataGame();
@@ -215,14 +215,14 @@ export class GameModel extends Component {
             
             let yieldPerCycle = plot.yieldPerCycle;
             let maxYield = plot.maxYield;
-            console.log('yieldPerCycle before', yieldPerCycle)
-            if(yieldPerCycle <= maxYield){
+            // console.log('yieldPerCycle before', yieldPerCycle)
+            if (yieldPerCycle <= maxYield) {
                 yieldPerCycle ++;
                 this.resetYieldPerCyclePlot(plot, type as ResourceType);
-            }else{
+            } else {
                 this.resetPlot(plot);
             }
-            console.log('yieldPerCycle after', yieldPerCycle)
+            // console.log('yieldPerCycle after', yieldPerCycle)
     
             PlotMapManager.Instance.updateUI(plotId);
             view.updateUI();
@@ -250,7 +250,6 @@ export class GameModel extends Component {
             this.harvested[type] = 0;
         }
         this.harvested[type] += amount;
-        // this.updateDataGame();
     }
 
     //upgrade 
@@ -270,6 +269,18 @@ export class GameModel extends Component {
     }
 
     //Worker
+    public hireWorkers(): void {
+        const getPriceWorker = WorkerConfig.price;
+        if (this.spendGold(getPriceWorker)) {
+            this.idleWorkers++;
+            GameView.Instance.showNotification('Hire worker successfully!');
+            this.updateDataGame();
+            GameView.Instance.updateUI();
+        } else {
+            GameView.Instance.showNotification('not enough Gold to hire worker');
+        }
+    }
+
     public startAutoWorkerTask(): void {
         if (this._workerTaskRunning) return;
     
@@ -282,28 +293,47 @@ export class GameModel extends Component {
     private assignWorkerTasks(): void {
         if (this.idleWorkers <= 0) return;
     
+        const availableSeeds = Object.keys(this.seeds).filter(seed => this.seeds[seed] > 0);
+        const canRaiseCow = this.seeds['cow'] > 0;
+    
         for (const plot of this.plots) {
             if (this.idleWorkers <= 0) break;
     
+            let actionTaken = false;
+    
             if (plot.status === PlotStatus.ReadyToHarvest) {
-                this.idleWorkers--;
                 this.harvestPlot(plot.id);
+                actionTaken = true;
+            } 
+            else if (plot.status === PlotStatus.Empty) {
+                const isPlant = randomRangeInt(0, 2);
+    
+                if (isPlant === 0 && canRaiseCow) {
+                    this.plantOrRaise(plot.id, 'cow');
+                    actionTaken = true;
+                } 
+                else if (availableSeeds.length > 0) {
+                    const randomSeed = availableSeeds[randomRangeInt(0, availableSeeds.length)];
+                    this.plantOrRaise(plot.id, randomSeed);
+                    actionTaken = true;
+                }
+            }
+    
+            if (actionTaken) {
+                this.idleWorkers--;
+                this.workers++;
+                this.handleWorkerAction();
+                this.updateDataGame();
                 GameView.Instance.updateUI();
-                this.handleWorkerAction(() => this.harvestPlot(plot.id));
-            } else if (plot.status === PlotStatus.Empty) {
-                // if (this.seeds['tomato'] > 0) {
-                //     this.idleWorkers--;
-                //     this.handleWorkerAction(() => this.plantOrRaise(plot.id, 'tomato'));
-                // }
             }
         }
     }
     
-    private handleWorkerAction(action: () => void): void {
+    private handleWorkerAction(): void {
         setTimeout(() => {
-            action();
             this.idleWorkers++;
             GameView.Instance.updateUI();
+            this.updateDataGame();
         }, 120_000);
     }
 

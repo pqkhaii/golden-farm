@@ -61,5 +61,3 @@ export class PlantOptions extends Component {
         }
     }
 }
-
-

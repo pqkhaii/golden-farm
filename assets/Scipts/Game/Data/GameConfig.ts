@@ -46,7 +46,7 @@ export const InitialState: InitialStateConfig = {
     cows: 2,
     workers: 1,
     equipmentLevel: 1,
-    gold: 2000000 //0
+    gold: 0
 }
 
 export interface GameState {
@@ -72,7 +72,7 @@ export interface GameState {
 export const ProduceConfigs: Record<ResourceType, ProduceConfig> = {
     tomato: {
         name: 'Tomato',
-        growTime: 5, //600
+        growTime: 600, //600
         yieldPerCycle: 1,
         maxYield: 40,
         sellPrice: 5,

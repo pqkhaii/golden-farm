@@ -41,6 +41,12 @@ export class GameView extends Component {
     @property({type: Animation}) 
     private notiAnimation: Animation = null;
 
+    @property({type: Node})
+    private nodePlantOption: Node;
+
+    @property({type: Node})
+    public popupWinGame: Node;
+
     protected onLoad(): void {
         GameView.Instance = this;
     }
@@ -51,7 +57,7 @@ export class GameView extends Component {
     
     public updateUI() {
         const model = GameModel.Instance;
-        this.goldLabel.string = model.Gold.toString();
+        this.goldLabel.string = model.gold.toString();
         
         //equipment
         this.equipmentLabel.string = model.equipmentLevel.toString();
@@ -81,5 +87,11 @@ export class GameView extends Component {
     public showNotification(text: string): void {
         this.notiLabel.string = text;
         this.notiAnimation.play();
+    }
+
+    public checkStatePopupPlantOption(): void {
+        if(this.nodePlantOption){
+            this.nodePlantOption.active = false;
+        }
     }
 }
