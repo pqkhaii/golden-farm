@@ -6,5 +6,3 @@ export class Constants extends Component {
 
     public static readonly SCENE_GAME = 'Game';
 }
-
-

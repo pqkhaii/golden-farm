@@ -1,6 +1,7 @@
 import { _decorator, Component, instantiate, Label, Node, Prefab, UITransform } from 'cc';
 import { PlotStatus } from '../PlotManager/PlotData';
 import { GameModel } from '../GameModel';
+import { AnimalType, SeedType } from '../Data/GameConfig';
 const { ccclass, property } = _decorator;
 
 @ccclass('PlantOptions')
@@ -37,10 +38,10 @@ export class PlantOptions extends Component {
         this.buttonContainer.removeAllChildren();
 
         const options = [
-            { label: 'Plant Tomato', type: 'tomato' },
-            { label: 'Plant Blueberry', type: 'blueberry' },
-            { label: 'Plant Strawberry', type: 'strawberry' },
-            { label: 'Raise Cow', type: 'cow' }
+            { label: 'Plant Tomato', type: SeedType.Tomato },
+            { label: 'Plant Blueberry', type: SeedType.Blueberry },
+            { label: 'Plant Strawberry', type: SeedType.Strawberry },
+            { label: 'Raise Cow', type: AnimalType.Cow }
         ];
 
         for (const option of options) {

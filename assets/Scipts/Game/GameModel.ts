@@ -1,9 +1,10 @@
 import { _decorator, Component, Node, randomRangeInt } from 'cc';
-import { EquipmentConfig, GameState, InitialState, InitialStateConfig, ProduceConfigs, ResourceType, ResourceTypeEnum, ShopItems, WorkerConfig } from './Data/GameConfig';
+import { AnimalType, EquipmentConfig, GameState, InitialState, InitialStateConfig, ProduceConfigs, ProductType, ResourceType, ResourceTypeEnum, SeedType, ShopItems, WorkerConfig } from './Data/GameConfig';
 import { PlotData, PlotStatus } from './PlotManager/PlotData';
 import { SaveLoadManager } from './SaveData/SaveLoadManager';
 import { GameView } from './GameView';
 import { PlotMapManager } from './PlotManager/PlotMapManager';
+import { Constants } from './Data/Constants';
 const { ccclass, property } = _decorator;
 
 @ccclass('GameModel')
@@ -156,9 +157,9 @@ export class GameModel extends Component {
         const plot = this.plots.find(p => p.id === plotId);
     
         if (plot && plot.status === PlotStatus.Empty) {
-            if (type === 'tomato' || type === 'blueberry' || type === 'strawberry') {
+            if (type === SeedType.Tomato || type === SeedType.Blueberry || type === SeedType.Strawberry) {
                 this.plantCrop(plot, type);
-            } else if (type === 'cow') {
+            } else if (type === AnimalType.Cow) {
                 this.raiseCow(plot);
             }
             PlotMapManager.Instance.updateUI(plotId);
@@ -188,8 +189,8 @@ export class GameModel extends Component {
     private raiseCow(plot: PlotData): void {
         if (this.cows > 0) {
             plot.status = PlotStatus.Used;
-            plot.name = 'Cow';
-            plot.type = 'milk';
+            plot.name = AnimalType.Cow;
+            plot.type = ProductType.Milk;
             plot.timeLeft = ProduceConfigs.milk.growTime;
             plot.yieldPerCycle = ProduceConfigs.milk.yieldPerCycle;
             plot.maxYield = ProduceConfigs.milk.maxYield;
@@ -294,7 +295,7 @@ export class GameModel extends Component {
         if (this.idleWorkers <= 0) return;
     
         const availableSeeds = Object.keys(this.seeds).filter(seed => this.seeds[seed] > 0);
-        const canRaiseCow = this.seeds['cow'] > 0;
+        const canRaiseCow = this.seeds[AnimalType.Cow] > 0;
     
         for (const plot of this.plots) {
             if (this.idleWorkers <= 0) break;
@@ -309,7 +310,7 @@ export class GameModel extends Component {
                 const isPlant = randomRangeInt(0, 2);
     
                 if (isPlant === 0 && canRaiseCow) {
-                    this.plantOrRaise(plot.id, 'cow');
+                    this.plantOrRaise(plot.id, AnimalType.Cow);
                     actionTaken = true;
                 } 
                 else if (availableSeeds.length > 0) {

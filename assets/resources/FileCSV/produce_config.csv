@@ -1,0 +1,5 @@
+type,name,growTime,yieldPerCycle,maxYield,sellPrice,harvestWindow
+tomato,Tomato,600,1,40,5,3600
+blueberry,Blueberry,900,1,40,8,3600
+strawberry,Strawberry,300,1,20,10,3600
+milk,Milk,1800,1,100,15,3600

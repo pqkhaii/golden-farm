@@ -44,7 +44,7 @@ export class SellController extends Component {
             const name = ProduceConfigs[type].name;
             const quantiySell = price * quantity;
 
-            const iconSpriteFrame =  this.gameView.getResourceSpriteFrame(typeEnum);
+            const iconSpriteFrame = this.gameView.getResourceSpriteFrame(typeEnum);
 
             const item = instantiate(this.itemSellPrefab);
             item.parent = this.contentParent;

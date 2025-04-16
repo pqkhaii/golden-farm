@@ -10,6 +10,23 @@ export enum ResourceTypeEnum {
     cow = 4
 }
 
+export enum SeedType {
+    Tomato = 'tomato',
+    Strawberry = 'strawberry',
+    Blueberry = 'blueberry',
+}
+
+export enum AnimalType {
+    Cow = 'cow',
+}
+
+export enum ProductType {
+    Milk = 'milk',
+    Tomato = 'tomato',
+    Strawberry = 'strawberry',
+    Blueberry = 'blueberry',
+}
+
 export interface ProduceConfig {
     name: string;
     growTime: number;

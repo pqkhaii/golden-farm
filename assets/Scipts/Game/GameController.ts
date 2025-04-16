@@ -1,4 +1,4 @@
-import { _decorator, Component, Director, director, EventTouch, game, Input, input, Node } from 'cc';
+import { _decorator, assetManager, Component, Director, director, EventTouch, game, Input, input, Node, resources, TextAsset } from 'cc';
 import { SaveLoadManager } from './SaveData/SaveLoadManager';
 import { GameModel } from './GameModel';
 import { InitialState, ResourceType } from './Data/GameConfig';
@@ -11,10 +11,9 @@ export class GameController extends Component {
 
     private gameModel: GameModel;
 
-    protected start(): void {
+    protected async start(): Promise<void> {
         this.gameModel = GameModel.Instance;
 
-        // SaveLoadManager.clearSave();
         const savedData = SaveLoadManager.loadGame();
         // console.log(savedData);
         if (savedData) {
@@ -25,7 +24,7 @@ export class GameController extends Component {
         
         this.gameModel.startAutoWorkerTask();
 
-        // input.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
+        this.getDataCSV();
     }
     
     private onTouchupgradeEquipment(): void {
@@ -41,7 +40,15 @@ export class GameController extends Component {
         director.loadScene(Constants.SCENE_GAME);
     }
 
-    // private onTouchStart(event: EventTouch): void {
-    //     console.log('click')
-    // }
+    private getDataCSV(): void {
+        resources.load('FileCSV/initial_state', TextAsset, (err, asset) => {
+            if (err || !asset) {
+                console.error('Load CSV failed:', err);
+                return;
+            }
+        
+            const text = asset.text;
+            console.log('CSV:', text);
+        });
+    }
 }
