@@ -27,8 +27,8 @@ export class ShopController extends Component {
             const name = data.name;
             const quantity = data.quantity;
             const price = data.price;
-            const ResourceTypeEnum = data.ResourceTypeEnum;
-            const iconSpriteFrame = GameView.Instance.getResourceSpriteFrame(ResourceTypeEnum);
+            const typeEnum = data.ResourceTypeEnum;
+            const iconSpriteFrame = GameView.Instance.getResourceSpriteFrame(typeEnum);
 
             const item = instantiate(this.itemShopPrefab);
             item.parent = this.contentParent;

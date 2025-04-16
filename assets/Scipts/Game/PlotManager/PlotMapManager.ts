@@ -35,9 +35,10 @@ export class PlotMapManager extends Component {
     }
 
     protected start() {
-        this.initPlots();
         this.gameView = GameView.Instance;
-        this.gameModel = this.gameModel;
+        this.gameModel = GameModel.Instance;
+
+        this.initPlots();
     }
 
     protected update(dt: number): void {

@@ -1,5 +1,5 @@
 import { _decorator, Component, Node } from 'cc';
-import { EquipmentConfig, GameState, InitialState, InitialStateConfig, ProduceConfigs, ResourceType, ShopItems } from './Data/GameConfig';
+import { EquipmentConfig, GameState, InitialState, InitialStateConfig, ProduceConfigs, ResourceType, ResourceTypeEnum, ShopItems } from './Data/GameConfig';
 import { PlotData, PlotStatus } from './PlotManager/PlotData';
 import { SaveLoadManager } from './SaveData/SaveLoadManager';
 import { GameView } from './GameView';
@@ -71,6 +71,7 @@ export class GameModel extends Component {
         this.workers = saved.workers;
         this.idleWorkers = saved.idleWorkers;
         this.seeds = {...saved.seeds};
+        this.harvested = {...saved.harvested};
         this.cows = saved.cows;
         this.plots = [...saved.plots];
         this.equipmentLevel = saved.equipmentLevel;
@@ -99,8 +100,8 @@ export class GameModel extends Component {
     } 
 
     public spendGold(amount: number): boolean {
-        if (GameModel.Instance.gold >= amount) {
-            GameModel.Instance.gold -= amount;
+        if (this.gold >= amount) {
+            this.gold -= amount;
             return true;
         }
         return false;
@@ -115,23 +116,42 @@ export class GameModel extends Component {
         SaveLoadManager.saveGame(this.getState());
     }
 
-    public sellHarvestedItem(type: ResourceType, amount: number): boolean {
+    //Shop
+    public sellHarvestedItem(type: ResourceType, quantity: number): boolean {
         let view = GameView.Instance;
-        if (this.harvested[type] < amount) {
+        if (this.harvested[type] < quantity) {
             console.log(`Not enough ${type} to sell`);
             return false;
         }
     
         const price = ProduceConfigs[type].sellPrice;
-        const totalPrice = price * amount;
+        const totalPrice = price * quantity;
     
-        this.harvested[type] -= amount;
+        this.harvested[type] -= quantity;
     
         this.gold += totalPrice;
-        view.showNotification(`Sell ${amount} ${ProduceConfigs[type].name} and collect ${totalPrice} gold.`)
+        view.showNotification(`Sell ${quantity} ${ProduceConfigs[type].name} and collect ${totalPrice} gold.`)
+        view.updateUI();
+        this.updateDataGame();
         return true;
     }
+
+    public getDataHarvested(): { type: string; quantity: number, typeEnum: ResourceTypeEnum }[] {
+        const result: {type: string, quantity: number, typeEnum: ResourceTypeEnum}[] = [];
+        for (const key in this.harvested) {
+            const value = this.harvested[key];
+            if (value > 0) {
+                result.push({
+                    type: key, 
+                    quantity: value, 
+                    typeEnum: ResourceTypeEnum[key as keyof typeof ResourceTypeEnum],
+                });
+            }
+        }
+        return result;
+    }
     
+    //Plant or Raise
     public plantOrRaise(plotId: number, type: string): void {
         const plot = this.plots.find(p => p.id === plotId);
     
@@ -179,6 +199,7 @@ export class GameModel extends Component {
         }
     }
     
+    //Harvest
     public harvestPlot(plotId: number): void {
         let view = GameView.Instance;
         const plot = this.plots.find(p => p.id === plotId);
@@ -209,30 +230,6 @@ export class GameModel extends Component {
             view.showNotification(`Harvested ${finalYield} ${type}!`);
         }
     }
-    
-
-    public addHarvested(type: ResourceType, amount: number): void {
-        if (!this.harvested[type]) {
-            this.harvested[type] = 0;
-        }
-        this.harvested[type] += amount;
-        this.updateDataGame();
-    }
-
-    public upgradeEquipment(): boolean {
-        let view = GameView.Instance;
-        const upgradeCost = EquipmentConfig.upgradePrice;
-        if (this.spendGold(upgradeCost)) {
-            this.equipmentLevel++;
-            view.showNotification(`Upgraded equipment to level ${this.equipmentLevel}. Yield increased by ${this.equipmentLevel * EquipmentConfig.yieldBoostPercent}%`);
-            this.updateDataGame();
-            view.updateUI();
-            return true;
-        } else {
-            view.showNotification('Not enough gold to upgrade equipment.');
-            return false;
-        }
-    }
 
     // name to resource type
     private getResourceTypeFromName(name: string): string | null {
@@ -245,6 +242,30 @@ export class GameModel extends Component {
                 return 'milk';
             default:
                 return null;
+        }
+    }
+
+    public addHarvested(type: ResourceType, amount: number): void {
+        if (!this.harvested[type]) {
+            this.harvested[type] = 0;
+        }
+        this.harvested[type] += amount;
+        // this.updateDataGame();
+    }
+
+    //upgrade 
+    public upgradeEquipment(): boolean {
+        let view = GameView.Instance;
+        const upgradeCost = EquipmentConfig.upgradePrice;
+        if (this.spendGold(upgradeCost)) {
+            this.equipmentLevel++;
+            view.showNotification(`Upgraded equipment to level ${this.equipmentLevel}. Yield increased by ${this.equipmentLevel * EquipmentConfig.yieldBoostPercent}%`);
+            this.updateDataGame();
+            view.updateUI();
+            return true;
+        } else {
+            view.showNotification('Not enough gold to upgrade equipment.');
+            return false;
         }
     }
 

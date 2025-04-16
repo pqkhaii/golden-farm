@@ -4657,8 +4657,8 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "itemShopPrefab": {
-      "__uuid__": "8b4bc2d7-b16f-4eb3-99c0-3c6ca2ecee27",
+    "itemSellPrefab": {
+      "__uuid__": "0618448f-2ee0-44de-be6e-e20b6e55e0d5",
       "__expectedType__": "cc.Prefab"
     },
     "contentParent": {

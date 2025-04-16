@@ -9,6 +9,7 @@ const { ccclass, property } = _decorator;
 export class GameController extends Component {
 
     protected start(): void {
+        // SaveLoadManager.clearSave();
         const savedData = SaveLoadManager.loadGame();
         // console.log(savedData);
         if (savedData) {
